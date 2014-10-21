@@ -206,7 +206,7 @@ dynamic_children() ->
     MaybeSSLProxySpec = maybe_create_ssl_proxy_spec(Config),
 
     [expand_args(NCAO) || NCAO <- PortServers] ++
-        query_node_spec(Config) ++
+        query_node_spec(Config) ++ indexer_node_specs(Config) ++
         per_bucket_moxi_specs(Config) ++ MaybeSSLProxySpec.
 
 %% TODO: this is all temp code (and windows incompabile) until:
@@ -232,6 +232,37 @@ query_node_spec(Config) ->
 
             [Spec]
     end.
+
+
+indexer_node_specs(Config) ->
+    case (os:getenv("ENABLE_2I") =/= false andalso
+          menelaus_web:is_system_provisioned() =/= false) of
+        false ->
+            [];
+        _ ->
+            RestPort = misc:node_rest_port(Config, node()),
+            LocalMemcachedPort = ns_config:search_node_prop(node(), Config, memcached, port),
+            NumVBuckets = case ns_config:search(couchbase_num_vbuckets_default) of
+                              false -> misc:getenv_int("COUCHBASE_NUM_VBUCKETS", 1024);
+                              {value, X} -> X
+                          end,
+            ClusterArg = "127.0.0.1:" ++ integer_to_list(RestPort),
+            KvListArg = "-kvaddrs=127.0.0.1:" ++ integer_to_list(LocalMemcachedPort),
+            NumVBsArg = "-vbuckets=" ++ integer_to_list(NumVBuckets),
+            ProjectorCmd = path_config:component_path(bin, "projector"),
+            IndexerCmd = path_config:component_path(bin, "indexer"),
+
+            ProjectorSpec = {'projector', ProjectorCmd,
+                    [KvListArg, ClusterArg],
+                    [use_stdio, exit_status, stderr_to_stdout, stream]},
+
+            IndexerSpec = {'indexer', IndexerCmd,
+                    [NumVBsArg],
+                    [use_stdio, exit_status, stderr_to_stdout, stream]},
+
+            [ProjectorSpec, IndexerSpec]
+    end.
+
 
 expand_args({Name, Cmd, ArgsIn, OptsIn}) ->
     Config = ns_config:get(),
