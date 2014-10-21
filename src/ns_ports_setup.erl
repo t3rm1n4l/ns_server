@@ -222,14 +222,11 @@ query_node_spec(Config) ->
             [];
         _ ->
             RestPort = misc:node_rest_port(Config, node()),
-            Command = path_config:component_path(bin, "cbq-engine"),
-            DataStoreArg = "--datastore=http://127.0.0.1:" ++ integer_to_list(RestPort),
-            CnfgStoreArg = "--configstore=http://127.0.0.1:" ++ integer_to_list(RestPort),
-            HttpArg = "--http=:" ++ integer_to_list(ns_config:search(Config, {node, node(), query_port}, 8093)),
+            Command = path_config:component_path(bin, "cbq_engine"),
+            ClusterArg = "-couchbase=http://127.0.0.1:" ++ integer_to_list(RestPort),
             Spec = {'query', Command,
-                    [DataStoreArg, HttpArg, CnfgStoreArg],
+                    [ClusterArg],
                     [use_stdio, exit_status, stderr_to_stdout, stream]},
-
             [Spec]
     end.
 
