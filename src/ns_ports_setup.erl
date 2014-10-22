@@ -246,15 +246,18 @@ indexer_node_specs(Config) ->
             ClusterArg = "127.0.0.1:" ++ integer_to_list(RestPort),
             KvListArg = "-kvaddrs=127.0.0.1:" ++ integer_to_list(LocalMemcachedPort),
             NumVBsArg = "-vbuckets=" ++ integer_to_list(NumVBuckets),
+            ProjectorArg = "-projector=127.0.0.1:9999",
+            IdxrLogArg = '-log=2',
+            ProjLogArg = '-debug=true',
             ProjectorCmd = path_config:component_path(bin, "projector"),
             IndexerCmd = path_config:component_path(bin, "indexer"),
 
             ProjectorSpec = {'projector', ProjectorCmd,
-                    [KvListArg, ClusterArg],
+                    [KvListArg, ClusterArg, ProjLogArg],
                     [use_stdio, exit_status, stderr_to_stdout, stream]},
 
             IndexerSpec = {'indexer', IndexerCmd,
-                    [NumVBsArg],
+                    [NumVBsArg, ProjectorArg, IdxrLogArg],
                     [use_stdio, exit_status, stderr_to_stdout, stream]},
 
             [ProjectorSpec, IndexerSpec]
