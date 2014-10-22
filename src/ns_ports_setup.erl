@@ -245,22 +245,31 @@ indexer_node_specs(Config) ->
                           end,
             ClusterArg = "127.0.0.1:" ++ integer_to_list(RestPort),
             KvListArg = "-kvaddrs=127.0.0.1:" ++ integer_to_list(LocalMemcachedPort),
-            NumVBsArg = "-vbuckets=" ++ integer_to_list(NumVBuckets),
-            ProjectorArg = "-projector=127.0.0.1:9999",
-            IdxrLogArg = '-log=2',
+
+
+
             ProjLogArg = '-debug=true',
             ProjectorCmd = path_config:component_path(bin, "projector"),
-            IndexerCmd = path_config:component_path(bin, "indexer"),
+
 
             ProjectorSpec = {'projector', ProjectorCmd,
                     [KvListArg, ClusterArg, ProjLogArg],
                     [use_stdio, exit_status, stderr_to_stdout, stream]},
 
-            IndexerSpec = {'indexer', IndexerCmd,
-                    [NumVBsArg, ProjectorArg, IdxrLogArg],
-                    [use_stdio, exit_status, stderr_to_stdout, stream]},
+            case os:getenv("DISABLE_2I_INDEXER") =/= false of
+            true ->
+                [ProjectorSpec];
+            false ->
+                IndexerCmd = path_config:component_path(bin, "indexer"),
+                IdxrLogArg = '-log=2',
+                NumVBsArg = "-vbuckets=" ++ integer_to_list(NumVBuckets),
+                ProjectorArg = "-projector=127.0.0.1:9999",
 
-            [ProjectorSpec, IndexerSpec]
+                IndexerSpec = {'indexer', IndexerCmd,
+                        [NumVBsArg, ProjectorArg, IdxrLogArg],
+                        [use_stdio, exit_status, stderr_to_stdout, stream]},
+                [ProjectorSpec, IndexerSpec]
+            end
     end.
 
 
