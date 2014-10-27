@@ -237,6 +237,7 @@ indexer_node_specs(Config) ->
         false ->
             [];
         _ ->
+            ProjectorPort = ns_config:search(Config, {node, node(), 2i_projector_port}, 9999),
             RestPort = misc:node_rest_port(Config, node()),
             LocalMemcachedPort = ns_config:search_node_prop(node(), Config, memcached, port),
             NumVBuckets = case ns_config:search(couchbase_num_vbuckets_default) of
@@ -245,15 +246,14 @@ indexer_node_specs(Config) ->
                           end,
             ClusterArg = "127.0.0.1:" ++ integer_to_list(RestPort),
             KvListArg = "-kvaddrs=127.0.0.1:" ++ integer_to_list(LocalMemcachedPort),
-
-
+            AdminPortArg = "-adminport=127.0.0.1:" ++ integer_to_list(ProjectorPort),
 
             ProjLogArg = '-debug=true',
             ProjectorCmd = path_config:component_path(bin, "projector"),
 
 
             ProjectorSpec = {'projector', ProjectorCmd,
-                    [KvListArg, ClusterArg, ProjLogArg],
+                    [KvListArg, ClusterArg, ProjLogArg, AdminPortArg],
                     [use_stdio, exit_status, stderr_to_stdout, stream]},
 
             case os:getenv("DISABLE_2I_INDEXER") =/= false of
@@ -263,7 +263,7 @@ indexer_node_specs(Config) ->
                 IndexerCmd = path_config:component_path(bin, "indexer"),
                 IdxrLogArg = '-log=2',
                 NumVBsArg = "-vbuckets=" ++ integer_to_list(NumVBuckets),
-                ProjectorArg = "-projector=127.0.0.1:9999",
+                ProjectorArg = "-projector=127.0.0.1:" ++ integer_to_list(ProjectorPort),
 
                 IndexerSpec = {'indexer', IndexerCmd,
                         [NumVBsArg, ProjectorArg, IdxrLogArg],
