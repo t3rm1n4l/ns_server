@@ -43,7 +43,7 @@ params(membase, BucketName, BucketConfig, MemQuota, UUID) ->
 
     [{"max_size", [{reload, flush}], MemQuota},
      {"dbname", [restart], DBSubDir},
-     {"backend", [], couchdb},
+     {"backend", [], magma},
      {"couch_bucket", [], BucketName},
      {"max_vbuckets", [], proplists:get_value(num_vbuckets, BucketConfig)},
      {"alog_path", [], filename:join(DBSubDir, "access.log")},
